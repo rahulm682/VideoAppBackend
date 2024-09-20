@@ -13,7 +13,6 @@ const uploadOnCloudinary = async (localFilePath) => {
     const uploadResult = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
     });
-
     // file uploaded succesfully
     console.log("uploaded on cloudinary", uploadResult.url);
     // unlink file from local storage
@@ -27,4 +26,31 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-export { uploadOnCloudinary };
+const deleteFromCloudinary = async (mediaUrl) => {
+  if (!mediaUrl) return;
+  try {
+    // Extract the public ID from the URL (without file extension)
+    const publicId = mediaUrl.split("/").pop().split(".")[0];
+
+    // Determine the resource type based on file extension
+    const fileExtension = mediaUrl.split(".").pop();
+    let resourceType = "image"; // Default to 'image'
+
+    // If the file extension indicates a video, change resourceType
+    if (["mp4", "avi", "mov", "mkv"].includes(fileExtension.toLowerCase())) {
+      resourceType = "video";
+    }
+
+    // Delete the file from Cloudinary
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+    });
+    console.log(mediaUrl, result);
+    return result;
+  } catch (error) {
+    console.error("Error deleting file from Cloudinary:", error);
+    throw error;
+  }
+};
+
+export { uploadOnCloudinary, deleteFromCloudinary };

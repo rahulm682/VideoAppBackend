@@ -2,7 +2,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
@@ -59,12 +62,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
   let coverImageLocalPath;
 
-  if (
-    res.files &&
-    isArray(res.files.coverImage) &&
-    res.files.coverImage.length > 0
-  ) {
-    coverImageLocalPath = res.files.coverImage[0].path;
+  if (req.files && req.files.coverImage?.length > 0) {
+    coverImageLocalPath = req.files.coverImage[0].path;
   }
 
   if (!avatarLocalPath) {
@@ -284,7 +283,10 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploading Avatar file");
   }
 
-  const user = await User.findByIdAndUpdate(
+  let user = await findById(req.user?.id);
+  const deletedAvatar = await deleteFromCloudinary(user?.avatar);
+
+  user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -313,7 +315,10 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploading coverImage file");
   }
 
-  const user = await User.findByIdAndUpdate(
+  let user = await findById(req.user?.id);
+  const deletedCoverImage = await deleteFromCloudinary(user?.coverImage);
+
+  user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {

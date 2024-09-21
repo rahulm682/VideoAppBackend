@@ -8,7 +8,98 @@ import {
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 
-const getAllVideos = asyncHandler(async (req, res) => {});
+const getAllVisibleVideos = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  if (!userId) {
+    throw new ApiError(400, "user id is required");
+  }
+
+  const allVideos = await Video.aggregate([
+    {
+      $match: {
+        isPublished: true,
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "user",
+
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        user: {
+          $first: "$user",
+        },
+      },
+    },
+  ]);
+
+  // console.log(allVideos);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, allVideos, "all videos fetched of user"));
+});
+
+const getAllVideos = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  if (!userId) {
+    throw new ApiError(400, "user id is required");
+  }
+
+  const allVideos = await Video.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "user",
+
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        user: {
+          $first: "$user",
+        },
+      },
+    },
+  ]);
+
+  // console.log(allVideos);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, allVideos, "all videos fetched of user"));
+});
 
 const publishVideo = asyncHandler(async (req, res) => {
   const { title, description, isPublished } = req.body;
@@ -63,20 +154,18 @@ const publishVideo = asyncHandler(async (req, res) => {
 });
 
 const getVideoById = asyncHandler(async (req, res) => {
-  const user = req.user?._id;
-  if (!user) {
-    throw new ApiError(400, "not authorised user");
-  }
-
   const { videoId } = req.params;
   if (!videoId?.trim()) {
     throw new ApiError(400, "video id not found");
   }
   const video = await Video.findById(videoId);
-  console.log(video);
 
   if (!video) {
     throw new ApiError(400, "video not found");
+  }
+
+  if (!video.isPublished) {
+    throw new ApiError(300, "video is not visible to others");
   }
 
   return res
@@ -211,4 +300,5 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  getAllVisibleVideos,
 };

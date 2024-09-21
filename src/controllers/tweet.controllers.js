@@ -48,6 +48,27 @@ const getUserTweets = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, allTweets, "tweets retrieved successfully"));
 });
 
+const getAnyUserTweets = asyncHandler(async (req, res) => {
+  let userid = req.user?._id;
+  if (!userid) {
+    throw new ApiError(400, "user not authorised");
+  }
+
+  const { userId } = req.params;
+
+  const allTweets = await Tweet.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, allTweets, "tweets retrieved successfully"));
+});
+
 const updateTweet = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   if (!userId) {
@@ -125,4 +146,10 @@ const deleteTweet = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, tweet, "tweet deleted successfully"));
 });
 
-export { createTweet, getUserTweets, updateTweet, deleteTweet };
+export {
+  createTweet,
+  getUserTweets,
+  updateTweet,
+  deleteTweet,
+  getAnyUserTweets,
+};

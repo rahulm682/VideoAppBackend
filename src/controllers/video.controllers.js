@@ -250,7 +250,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
   video = await Video.deleteOne({ _id: videoId });
 
   if (video.deletedCount == 0) {
-    throw new ApiError(400, "invalid video id");
+    throw new ApiError(500, "video cannot be deleted due to some problem");
   }
 
   return res.status(200).json(new ApiResponse(200, video, "Video deleted"));

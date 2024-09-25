@@ -1,6 +1,10 @@
 import mongoose, { Schema } from "mongoose";
 
 const likeSchema = new Schema({
+  liked: {
+    type: Boolean,
+    default: true,
+  },
   comment: {
     type: Schema.Types.ObjectId,
     ref: "Comment",
@@ -19,4 +23,4 @@ const likeSchema = new Schema({
   },
 });
 
-export const Like = mongoose.Schema("Like", likeSchema);
+export const Like = mongoose.model("LLike", likeSchema);

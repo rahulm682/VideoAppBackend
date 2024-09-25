@@ -158,14 +158,105 @@ const getVideoById = asyncHandler(async (req, res) => {
   if (!videoId?.trim()) {
     throw new ApiError(400, "video id not found");
   }
-  const video = await Video.findById(videoId);
+  const video = await Video.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(videoId),
+      },
+    },
+    // get all likes in array
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+        pipeline: [
+          {
+            $match: {
+              liked: true,
+            },
+          },
+          {
+            $group: {
+              _id: "$liked",
+              likeOwners: { $push: "$likedBy" },
+            },
+          },
+        ],
+      },
+    },
+    // get all the likes in likes array
+    {
+      $addFields: {
+        likes: {
+          $cond: {
+            if: {
+              $gt: [{ $size: "$likes" }, 0],
+            },
+            then: { $first: "$likes.likeOwners" },
+            else: [],
+          },
+        },
+      },
+    },
+    // get owner of video
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullName: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    // destructure the array of owner as a separate document
+    {
+      $unwind: "$owner",
+    },
+    {
+      $project: {
+        videoFile: 1,
+        title: 1,
+        description: 1,
+        duration: 1,
+        thumbnail: 1,
+        time: 1,
+        views: 1,
+        owner: 1,
+        isPublished: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        totalLikes: {
+          $size: "$likes",
+        },
+        isLiked: {
+          $cond: {
+            if: {
+              $in: [req.user?._id, "$likes"],
+            },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+  ]);
 
   if (!video) {
     throw new ApiError(400, "video not found");
   }
 
-  if (!video.isPublished) {
-    throw new ApiError(300, "video is not visible to others");
+  if (video.isPublished === false) {
+    throw new ApiError(500, "video is not visible to others");
   }
 
   return res
@@ -296,9 +387,9 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 export {
   publishVideo,
   getVideoById,
-  getAllVideos,
   updateVideo,
   deleteVideo,
   togglePublishStatus,
   getAllVisibleVideos,
+  getAllVideos,
 };

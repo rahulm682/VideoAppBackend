@@ -344,6 +344,10 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(500, "video cannot be deleted due to some problem");
   }
 
+  await Like.deleteMany({
+    video: new mongoose.Types.ObjectId(videoId),
+  });
+
   return res.status(200).json(new ApiResponse(200, video, "Video deleted"));
 });
 

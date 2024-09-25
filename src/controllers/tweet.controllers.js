@@ -312,11 +312,15 @@ const deleteTweet = asyncHandler(async (req, res) => {
     throw new ApiError(400, "user not authorised");
   }
 
-  tweet = await Tweet.deleteOne({ _id: tweetId });
+  tweet = await Tweet.findByIdAndDelete(tweetId);
 
   if (tweet.deletedCount == 0) {
     throw new ApiError(500, "tweet cannot be deleted due to some problem");
   }
+
+  await Like.deleteMany({
+    tweet: new mongoose.Types.ObjectId(tweetId),
+  });
 
   return res
     .status(200)

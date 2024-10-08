@@ -200,6 +200,34 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
       },
     },
+    // get all comments in array
+    {
+      $lookup: {
+        from: "comments",
+        localField: "_id",
+        foreignField: "video",
+        as: "comments",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    fullName: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
     // get owner of video
     {
       $lookup: {
@@ -235,6 +263,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         isPublished: 1,
         createdAt: 1,
         updatedAt: 1,
+        comments: 1,
         totalLikes: {
           $size: "$likes",
         },

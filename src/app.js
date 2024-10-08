@@ -25,13 +25,15 @@ import videoRouter from "./routes/video.routes.js";
 import tweetRouter from "./routes/tweet.routes.js";
 import likeRouter from "./routes/like.routes.js";
 import commentRouter from "./routes/comment.routes.js";
-import health from "./routes/health.routes.js";
+import healthRouter from "./routes/health.routes.js";
+import playlistRouter from "./routes/playlist.routes.js";
 
 app.use("/api/users", userRouter);
 app.use("/api/videos", videoRouter);
 app.use("/api/tweets", tweetRouter);
 app.use("/api/likes", likeRouter);
-app.use("/api/comment", commentRouter);
-app.use("/api/health", health);
+app.use("/api/comments", commentRouter);
+app.use("/api/health", healthRouter);
+app.use("/api/playlist", playlistRouter);
 
 export default app;

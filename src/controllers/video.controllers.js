@@ -158,6 +158,12 @@ const getVideoById = asyncHandler(async (req, res) => {
   if (!videoId?.trim()) {
     throw new ApiError(400, "video id not found");
   }
+
+  const userId = req.user?._id;
+  if (!userId) {
+    throw new ApiError(400, "userId is required");
+  }
+
   const video = await Video.aggregate([
     {
       $match: {
@@ -270,7 +276,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         isLiked: {
           $cond: {
             if: {
-              $in: [req.user?._id, "$likes"],
+              $in: [userId, "$likes"],
             },
             then: true,
             else: false,
@@ -290,7 +296,9 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video, "video information successfully"));
+    .json(
+      new ApiResponse(200, video, "video information fetched successfully")
+    );
 });
 
 // in this controller we are updating all the three values

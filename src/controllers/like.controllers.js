@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Like } from "../models/like.model.js";
 import { Video } from "../models/video.model.js";
 import { Tweet } from "../models/tweet.model.js";
+import { Comment } from "../models/comment.model.js";
 import mongoose from "mongoose";
 
 const toggleLike = asyncHandler(async (req, res) => {
@@ -137,7 +138,14 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     }
   }
 
-  let totalLikes = await Like.find({ video: videoId });
+  let totalLikes = await Like.aggregate([
+    {
+      $match: {
+        video: new mongoose.Types.ObjectId(videoId),
+        liked: true,
+      },
+    },
+  ]);
 
   return res
     .status(200)
@@ -232,7 +240,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     }
   }
 
-  let totalLikes = await Like.find({ tweet: tweetId });
+  let totalLikes = await Like.find({ tweet: tweetId, liked: true });
 
   return res
     .status(200)

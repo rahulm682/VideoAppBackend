@@ -28,7 +28,7 @@ router.route("/publish-video").post(
   publishVideo
 );
 
-router.route("/fetch-video/:videoId").get(getVideoById);
+router.route("/fetch-video/:videoId").get(verifyJWT, getVideoById);
 router
   .route("/update-video/:videoId")
   .patch(verifyJWT, upload.single("thumbnail"), updateVideo);
